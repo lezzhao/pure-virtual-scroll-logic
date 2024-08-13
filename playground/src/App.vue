@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { useScrollHelper } from "../../src/scroll";
+import { useVirtualScroll } from "../../src/scroll";
 
 const list = Array.from({ length: 1000000 }).map((_, i) => ({
   id: i,
@@ -8,23 +8,32 @@ const list = Array.from({ length: 1000000 }).map((_, i) => ({
 }))
 
 const containerRef = ref<HTMLElement>()
-const virtualInfo = ref<any>()
-const realHeight = ref(0)
+const virtualInfo = ref<any>({
+  offset: 0,
+  realHeight: 0
+})
 const visList = ref<any>([])
+const htmlStr = ref('')
 
 onMounted(() => {
   if (containerRef.value) {
-    const res = useScrollHelper({
-      list,
-      el: containerRef.value,
-      rowHeight: 22,
-      calcFn: (info) => {
-        virtualInfo.value = info
-        visList.value = info.list
-        console.log(info);
+
+    useVirtualScroll({
+      amount: list.length,
+      viewport: containerRef.value,
+      itemHeight: 22,
+      onCalculated: (info) => {
+        visList.value = list.slice(info.start, info.end)
+        console.log(visList.value);
+        
+        virtualInfo.value = {
+          offset: info.offset,
+          realHeight: info.realHeight
+        }
+
+        htmlStr.value = visList.value.map((item: any) => `<div class="item">${item.name}</div>`).join('')
       }
     })
-    realHeight.value = res.realHeight
   }
 })
 
@@ -32,9 +41,9 @@ onMounted(() => {
 
 <template>
   <div class="container" ref="containerRef">
-    <div class="content" :style="{ height: `${realHeight}px` }">
-      <div :style="{ transform: `translateY(${virtualInfo?.offsetY || 0}px)` }">
-        <div class="item" v-for="item, index in visList">
+    <div class="content" :style="{ height: `${virtualInfo.realHeight}px` }">
+      <div :style="{ transform: `translateY(${virtualInfo?.offset || 0}px)` }">
+        <div class="item" v-for="item, index in visList" :key="index">
           <span>{{ item.name }}</span>
         </div>
       </div>

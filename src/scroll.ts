@@ -1,10 +1,66 @@
+import type { VirtualScrollOptions } from './type'
+
+const defaultConfig = {
+  bufferSize: 5,
+  estimateHeight: 40,
+  animationFrame: 0,
+}
+
+const isString = (val: unknown): val is string => typeof val === 'string'
+
+export function throttle(fn: (...args: any[]) => void, time = 300) {
+  let oldTime = Date.now()
+  return function (...args: any[]) {
+    const newTime = Date.now()
+    if (newTime - oldTime >= time) {
+      // eslint-disable-next-line no-useless-call
+      fn.apply(null, [...args])
+      oldTime = Date.now()
+    }
+  }
+}
+
+export function useVirtualScroll(options: VirtualScrollOptions) {
+  const { itemHeight, amount, bufferSize, viewport, onCalculated } = options
+
+  defaultConfig.bufferSize = bufferSize || defaultConfig.bufferSize
+
+  const _viewport = isString(viewport) ? document.querySelector(viewport) : viewport
+  const viewportHeight = _viewport?.clientHeight || 0
+
+  const calculatePosition = (scrollTop: number) => {
+    const start = findFirstNode(false, { scrollTop, itemHeight })
+
+    const end = findLastNode(false, { start, itemHeight, viewportHeight, amount })
+    console.log(start, end)
+    onCalculated({ start, end, offset: start * itemHeight, realHeight: amount * itemHeight })
+  }
+
+  calculatePosition(0)
+
+  const onScroll = (e: Event) => {
+    if (defaultConfig.animationFrame) {
+      cancelAnimationFrame(defaultConfig.animationFrame)
+    }
+    defaultConfig.animationFrame = requestAnimationFrame(() => {
+      calculatePosition((e.target as HTMLElement).scrollTop)
+    })
+  }
+  _viewport?.addEventListener('scroll', onScroll)
+  const cleanup = () => _viewport?.removeEventListener('scroll', onScroll)
+
+  return {
+    cleanup,
+  }
+}
+
 export function useScrollHelper(options: {
   el: HTMLElement
   list: any[]
-  rowHeight: number
+  itemHeight: number
   calcFn: (data: any) => void
 }) {
-  const { el, list, rowHeight, calcFn } = options
+  const { el, list, itemHeight, calcFn } = options
   const positionInfo = {
     animationFrame: 0,
     viewportHeight: el?.clientHeight || 0,
@@ -14,10 +70,10 @@ export function useScrollHelper(options: {
   }
 
   const calculateData = (scrollTop: number) => {
-    const startIndex = findFirstNode(false, { scrollTop, rowHeight })
-    const end = findLastNode(false, { start: startIndex, rowHeight, viewportHeight: positionInfo.viewportHeight, amount: list.length })
+    const startIndex = findFirstNode(false, { scrollTop, itemHeight })
+    const end = findLastNode(false, { start: startIndex, itemHeight, viewportHeight: positionInfo.viewportHeight, amount: list.length })
     positionInfo.list = list.slice(startIndex, end + 1)
-    positionInfo.offsetY = startIndex * rowHeight
+    positionInfo.offsetY = startIndex * itemHeight
     calcFn(positionInfo)
   }
 
@@ -37,17 +93,17 @@ export function useScrollHelper(options: {
   calculateData(0)
 
   return {
-    realHeight: list.length * rowHeight,
+    realHeight: list.length * itemHeight,
     cleanup,
     positionInfo,
     offsetY: positionInfo.top,
   }
 }
 
-function findFirstNode(isDynamic: boolean, options: { amount?: number, nodes?: number[], scrollTop: number, rowHeight?: number }) {
-  const { nodes = [], scrollTop, amount = 0, rowHeight = 10 } = options
+function findFirstNode(isDynamic: boolean, options: { amount?: number, nodes?: number[], scrollTop: number, itemHeight?: number }) {
+  const { nodes = [], scrollTop, amount = 0, itemHeight = 10 } = options
   if (!isDynamic) {
-    return Math.floor(scrollTop / rowHeight)
+    return Math.floor(scrollTop / itemHeight)
   }
   let left = 0
   let right = amount - 1
@@ -70,14 +126,14 @@ function findFirstNode(isDynamic: boolean, options: { amount?: number, nodes?: n
   return left
 }
 
-function findLastNode(isDynamic: boolean, options: { amount?: number, nodes?: number[], start: number, rowHeight?: number, viewportHeight: number }) {
-  const { nodes = [], start, amount = 0, rowHeight = 10, viewportHeight } = options
+function findLastNode(isDynamic: boolean, options: { amount?: number, nodes?: number[], start: number, itemHeight?: number, viewportHeight: number }) {
+  const { nodes = [], start, amount = 0, itemHeight = 10, viewportHeight } = options
   let end = start
   let curHeight = 0
   for (;end < amount; end++) {
     if (curHeight > viewportHeight)
       break
-    const height = isDynamic ? nodes[end] : rowHeight
+    const height = isDynamic ? nodes[end] : itemHeight
     curHeight += height
   }
   return end + 5
