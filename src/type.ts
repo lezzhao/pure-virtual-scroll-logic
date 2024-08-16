@@ -1,3 +1,5 @@
+type ItemHeight = number | 'dynamic'
+
 interface CalculatedResult {
   start: number
   end: number
@@ -9,7 +11,7 @@ export interface VirtualScrollOptions {
   /**
    * The height of each item in the list.
    */
-  itemHeight: number
+  itemHeight: ItemHeight
 
   /**
    * The number of items to render above and below the visible area.
@@ -30,4 +32,15 @@ export interface VirtualScrollOptions {
    * the callback function when the scroll position changes
    */
   onCalculated: (params: CalculatedResult) => void
+}
+
+export interface FindCommonOptions {
+  nodes: number[]
+  itemHeight: ItemHeight
+  scrollTop: number
+}
+
+export interface FindLastNodeOptions extends Omit<FindCommonOptions, 'scrollTop'> {
+  start: number
+  viewportHeight: number
 }
