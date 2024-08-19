@@ -1,21 +1,24 @@
 import { findFirstNode, findLastNode, isString, throttle } from './helper'
-import type { VirtualScrollOptions } from './type'
+import { createObserver } from './observe'
+import type { UpdateEstimatedOptions, VirtualScrollOptions } from './type'
 
 const defaultConfig = {
-  bufferSize: 5,
-  estimateHeight: 40,
+  bufferSize: 3,
+  estimatedHeight: 40,
   animationFrame: 0,
 }
 
 export function useVirtualScroll(options: VirtualScrollOptions) {
   const { itemHeight, amount, bufferSize, viewport, onCalculated } = options
   // cache the estimated top value for each item
-  const estimatedCache = Array.from({ length: amount }, (_, i) => itemHeight === 'dynamic' ? i * defaultConfig.estimateHeight : i * itemHeight)
+  const estimatedCache = Array.from({ length: amount }, (_, i) => itemHeight === 'dynamic' ? i * defaultConfig.estimatedHeight : i * itemHeight)
+  const estimatedItemHeight = Array.from({ length: amount }, () => defaultConfig.estimatedHeight)
   // buffer zone
   const buffer = bufferSize || defaultConfig.bufferSize
   // get the height of the viewport
   const _viewport = isString(viewport) ? document.querySelector(viewport) : viewport
   const viewportHeight = _viewport?.clientHeight || 0
+
   // calculate the range of the items that need to be rendered
   const calculatePosition = (scrollTop: number) => {
     const start = findFirstNode({ scrollTop, itemHeight, nodes: estimatedCache })
@@ -43,16 +46,17 @@ export function useVirtualScroll(options: VirtualScrollOptions) {
     }
   }
   // update estimated cache
-  const updateEstimatedCache = (options: { index: number, height: number, width: number }) => {
-    const { index, height } = options
-    const oldHeight = estimatedCache[index]
-    const diffVal = height - oldHeight
-    if (!diffVal)
+  const updateEstimatedCache = (options: UpdateEstimatedOptions) => {
+    const { index, height, isLast } = options
+    if (estimatedItemHeight[index] === height)
       return
-    for (let i = index; i < estimatedCache.length; i++) {
-      estimatedCache[i] += diffVal
+    estimatedItemHeight[index] = height
+    if (isLast) {
+      for (let i = 0; i < estimatedCache.length; i++) {
+        estimatedCache[i] = i === 0 ? 0 : estimatedItemHeight[i - 1] + estimatedCache[i - 1]
+      }
+      calculatePosition(_viewport?.scrollTop || 0)
     }
-    calculatePosition(_viewport?.scrollTop || 0)
   }
 
   return {

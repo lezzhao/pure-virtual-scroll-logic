@@ -1,6 +1,10 @@
-export function createObserver(handler: (options: { index: number, height: number, width: number }) => void) {
+import type { ResizeObserverCallback } from './type'
+
+export function createObserver(handler: ResizeObserverCallback) {
   const observer = new ResizeObserver((entries) => {
     if (Array.isArray(entries)) {
+      const len = entries.length
+      let i = 0
       for (const entry of entries) {
         let width, height
         if (entry.borderBoxSize) {
@@ -12,7 +16,8 @@ export function createObserver(handler: (options: { index: number, height: numbe
           width = entry.contentRect.width
           height = entry.contentRect.height
         }
-        handler({ height, width, index: Number((entry.target as HTMLElement).dataset.index) })
+        i++
+        handler({ height, width, el: entry.target as HTMLElement, isLast: i === len })
       }
     }
   })

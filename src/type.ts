@@ -14,6 +14,11 @@ export interface VirtualScrollOptions {
   itemHeight: ItemHeight
 
   /**
+   * The estimated height of each dynamic item in the list.
+   */
+  estimatedHeight: number
+
+  /**
    * The number of items to render above and below the visible area.
    */
   bufferSize?: number
@@ -44,3 +49,19 @@ export interface FindLastNodeOptions extends Omit<FindCommonOptions, 'scrollTop'
   start: number
   viewportHeight: number
 }
+
+interface ResizeObserverCommonOptions {
+  height: number
+  width: number
+  isLast: boolean
+}
+
+export interface UpdateEstimatedOptions extends ResizeObserverCommonOptions {
+  index: number
+}
+
+interface ResizeObserverCallbackOptions extends ResizeObserverCommonOptions {
+  el: HTMLElement
+}
+
+export type ResizeObserverCallback = (options: ResizeObserverCallbackOptions) => void
