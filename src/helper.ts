@@ -22,17 +22,17 @@ export function findFirstNode(options: FindCommonOptions) {
   const amount = nodes.length
   let left = 0
   let right = amount - 1
-  let mid = Math.floor((right - left) / 2)
+  let mid = Math.floor((right + left) / 2)
   while (right - left > 1) {
     if (
       scrollTop < nodes[mid]
     ) {
       right = mid
-      mid = Math.floor((right - left) / 2)
+      mid = Math.floor((right + left) / 2)
     }
     else if (scrollTop > nodes[mid]) {
       left = mid
-      mid = Math.floor((right - left) / 2)
+      mid = Math.floor((right + left) / 2)
     }
     else {
       return mid
@@ -46,9 +46,10 @@ export function findLastNode(options: FindLastNodeOptions) {
   const amount = nodes.length
   let end = start
   let curHeight = 0
-  for (;end < amount; end++) {
+  for (;end < amount;) {
     if (curHeight > viewportHeight)
       break
+    end++
     const height = itemHeight === 'dynamic' ? nodes[end] - nodes[end - 1] : itemHeight
     curHeight += height
   }

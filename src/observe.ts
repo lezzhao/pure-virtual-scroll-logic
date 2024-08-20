@@ -1,7 +1,7 @@
 import type { ResizeObserverCallback } from './type'
 
 export function createObserver(handler: ResizeObserverCallback) {
-  const observer = new ResizeObserver((entries) => {
+  return new ResizeObserver((entries) => {
     if (Array.isArray(entries)) {
       const len = entries.length
       let i = 0
@@ -21,10 +21,4 @@ export function createObserver(handler: ResizeObserverCallback) {
       }
     }
   })
-
-  return {
-    observe: observer.observe,
-    unobserve: observer.unobserve,
-    disconnect: observer.disconnect,
-  }
 }

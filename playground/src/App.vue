@@ -13,28 +13,31 @@ const virtualInfo = ref<any>({
   realHeight: 0,
 })
 const visList = ref<any>([])
+const start = ref(0)
 
 onMounted(() => {
   if (containerRef.value) {
-    const { initVirtualScroll } = useVirtualScroll({
+    const { observe } = useVirtualScroll({
       amount: list.length,
       viewport: containerRef.value,
-      itemHeight: 22,
+      itemHeight: 'dynamic',
+      estimatedHeight: 22,
       onCalculated: (info) => {
         visList.value = list.slice(info.start, info.end)
+        start.value = info.start
         virtualInfo.value = {
           offset: info.offset,
           realHeight: info.realHeight,
         }
-        // nextTick(() => {
-        //   for (let i = 0; i < visList.value.length; i++) {
-        //     const el = document.querySelector(`[data-index="${info.start + i}"]`)
-        //   }
-        // })
+
+        nextTick(() => {
+          for (let i = 0; i < visList.value.length; i++) {
+            const el = document.querySelector(`[data-index="${start.value + i}"]`)
+            observe(el as HTMLElement)
+          }
+        })
       },
     })
-
-    initVirtualScroll()
   }
 })
 </script>
@@ -44,9 +47,9 @@ onMounted(() => {
     <div class="content" :style="{ height: `${virtualInfo.realHeight}px` }">
       <div :style="{ transform: `translateY(${virtualInfo?.offset || 0}px)` }">
         <div v-for="item, index in visList" :key="index" class="item" :data-index="index">
-          <span v-if="index % 2 === 0">{{ item.name }}</span>
+          <span v-if="(start + index) % 2 === 0">{{ item.name }}</span>
           <details v-else>
-            <summary>Google Nexus 6</summary>
+            <summary>Google Nexus {{ item.name }}</summary>
             <p>商品详情：</p>
             <dl>
               <dt>屏幕</dt>

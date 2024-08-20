@@ -10,16 +10,19 @@ interface CalculatedResult {
 export interface VirtualScrollOptions {
   /**
    * The height of each item in the list.
+   * @default 30
    */
   itemHeight: ItemHeight
 
   /**
    * The estimated height of each dynamic item in the list.
+   * @default 30
    */
   estimatedHeight: number
 
   /**
    * The number of items to render above and below the visible area.
+   * @default 3
    */
   bufferSize?: number
 
